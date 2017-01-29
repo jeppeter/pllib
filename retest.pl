@@ -31,6 +31,15 @@ sub findall_handler($$)
 	return;
 }
 
+sub sub_handler($$$)
+{
+	my ($fromstr,$tostr,$instr)=@_;
+	my ($replaced)=$instr;
+	$replaced =~ s/$fromstr/$tostr/;
+	print STDOUT "[$instr] from [$fromstr] to [$tostr] [$replaced]\n";
+	return;
+}
+
 sub Usage
 {
 	my ($ec,$fmt);
@@ -55,6 +64,7 @@ sub Usage
 	print $fp "$0 [commands] ...\n";
 	print $fp "\tmatch restr instr...                   match string\n";
 	print $fp "\tfindall restr instr...                 find all matches\n";	
+	print $fp "\tsub fromstr [tostr] instr...           replace value\n";
 	exit($ec);
 }
 
@@ -65,7 +75,7 @@ if (scalar(@ARGV) < 2) {
 }
 
 my ($cmd)=shift @ARGV;
-my ($restr,$instr);
+my ($restr,$instr,$fromstr,$tostr);
 
 if ($cmd eq "match") {
 	if (scalar(@ARGV) < 2) {
@@ -83,6 +93,19 @@ if ($cmd eq "match") {
 	foreach (@ARGV){
 		findall_handler($restr,$_);
 	}	
+} elsif ($cmd eq "sub") {
+	if (scalar(@ARGV) < 2) {
+		Usage(3,"sub need [fromstr] [tostr] [instr]");
+	}
+	$fromstr = shift @ARGV;
+	if (scalar(@ARGV) == 1) {
+		$tostr = "";
+	} else {
+		$tostr = shift @ARGV;
+	}
+	foreach(@ARGV) {
+		sub_handler($fromstr,$tostr,$_);
+	}
 } else {
 	Usage(3,"[$cmd] not handled");
 } 
