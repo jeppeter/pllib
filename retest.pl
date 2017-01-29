@@ -23,7 +23,11 @@ sub findall_handler($$)
 	if (scalar(@matches) > 0) {
 		print STDOUT "[$restr] findall [$instr]\n";
 		for($i=0;$i<scalar(@matches);$i++) {
-			print STDOUT "[$i] ".$matches[$i]."\n";
+			if (defined($matches[$i])) {
+				print STDOUT "[$i] [".$matches[$i]."]\n";
+			} else {
+				print STDOUT "[$i] undefined\n";
+			}
 		}
 	} else {
 		print STDOUT "[$restr] find no matches [$instr]\n";
