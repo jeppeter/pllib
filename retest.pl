@@ -1,6 +1,24 @@
 #! /usr/bin/env perl -w
 
 use strict;
+use Getopt::Long;
+
+my ($verbose)=0;
+my ($logo)="retest";
+
+sub Debug($)
+{
+	my ($fmt)=@_;
+	my ($fmtstr)="$logo ";
+	if ($verbose > 0) {
+		if ($verbose >= 3) {
+			my ($p,$f,$l) = caller;
+			$fmtstr .= "[$f:$l] ";
+		}
+		$fmtstr .= $fmt;
+		print STDERR "$fmtstr\n";
+	}
+}
 
 sub match_handler($$)
 {
@@ -65,11 +83,33 @@ sub Usage
 		print $fp "$fmt\n";
 	}
 
-	print $fp "$0 [commands] ...\n";
+	print $fp "$0 [OPTIONS] [subcmds] ...\n";
+	print $fp "[OPTIONS]\n";
+	print $fp "\t-h|--help                              to display this help information\n";
+	print $fp "\t-v|--verbose                           to specified verbose mode\n";
+	print $fp "[subcmds]\n";
 	print $fp "\tmatch restr instr...                   match string\n";
 	print $fp "\tfindall restr instr...                 find all matches\n";	
 	print $fp "\tsub fromstr [tostr] instr...           replace value\n";
 	exit($ec);
+}
+
+my (%opts);
+Getopt::Long::Configure("no_ignorecase","bundling");
+Getopt::Long::GetOptions(\%opts,"help|h",
+	"verbose|v" => sub {
+		if (!defined($opts{"verbose"})) {
+			$opts{"verbose"} = 0;
+		}
+		${opts{"verbose"}} ++;
+	},
+	"simple|s");
+if (defined($opts{"help"})){
+	Usage(0,"");
+}
+
+if (defind($opts{"verbose"})) {
+	$verbose=$opts{"verbose"};
 }
 
 
