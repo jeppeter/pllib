@@ -108,7 +108,7 @@ if (defined($opts{"help"})){
 	Usage(0,"");
 }
 
-if (defind($opts{"verbose"})) {
+if (defined($opts{"verbose"})) {
 	$verbose=$opts{"verbose"};
 }
 
