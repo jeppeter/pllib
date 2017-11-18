@@ -45,9 +45,11 @@ sub Usage($$)
 	print $fp "$0  [OPTIONS] [SUBCMD] [args...]\n";
 	print $fp "[SUBCMD]\n";
 	print $fp "\tdirempty  rootdir...               to handle find root dir\n";
+	print $fp "\tfilterurl [inputfiles]...          to filter output file\n";
 	print $fp "[OPTIONS]\n";
 	print $fp "\t--help|-h                   to display this help information\n";
 	print $fp "\t--verbose|-v                to specified verbose\n";
+	print $fp "\t--output|-o outfile         to specified the output default stdout\n";
 	
 	exit($ec);
 }
@@ -57,6 +59,8 @@ sub dir_empty($)
 	my ($rootdir) = @_;
 	my ($dh);
 	my ($cnt) = 0;
+	my (@curdirs);
+	my (@retdirs);
 
 	if ( -d "$rootdir" ) {
 		opendir($dh,"$rootdir") or die "can not open[$rootdir] [$!]";
@@ -68,18 +72,37 @@ sub dir_empty($)
 				next;
 			}
 			$cnt ++;
-			&dir_empty($curd);
+			@curdirs = &dir_empty($curd);
+			foreach (@curdirs) {
+				push(@retdirs, $_);
+			}
 		}
 		closedir($dh);
 		undef($dh);
 		if ($cnt == 0) {
-			print "$rootdir\n";
+			push(@retdirs,$rootdir);
 		}
 	}
-	return;
+	return @retdirs;
+}
+
+sub filter_url($)
+{
+	my ($infp) = @_;
+	my (@urls);
+
+	while(<$infp>) {
+		my ($l) = $_;
+		chomp($l);
+		if ( $l =~ m/<GET::([^\>]+)>/o) {
+			push(@urls,$1);
+		}
+	}
+	return @urls;
 }
 
 my (%opts);
+my ($outfp) = \*STDOUT;
 Getopt::Long::Configure("no_ignorecase","bundling");
 Getopt::Long::GetOptions(\%opts,"help|h",
 	"verbose|v" => sub {
@@ -104,14 +127,56 @@ if (scalar(@ARGV) <= 0) {
 
 my ($subcmd) = shift @ARGV;
 
+if (defined($opts{'output'})) {
+	open($outfp, ">".$opts{'output'}) || die "can not open [".$opts{'output'}."] [$!]";
+}
+
 if ( "$subcmd" eq "dirempty" ) {
+	my (@curdirs);
+	my (@outdirs);
+	my ($outfp) = \*STDOUT;
 	if (scalar(@ARGV) > 0) {
 		foreach (@ARGV) {
-			dir_empty($_);
+			@curdirs = dir_empty($_);
+			foreach(@curdirs) {
+				push(@outdirs, $_);
+			}
 		}
 	} else {
-		dir_empty(".");
+		@outdirs =dir_empty(".");
 	}
+
+	foreach (@outdirs) {
+		print $outfp "$_\n";
+	}
+
+} elsif ( "$subcmd" eq "filterurl" )  {
+	my (@urls) ;
+	my (@cururls);
+	my ($fp);
+	if (scalar(@ARGV) > 0) {
+		foreach (@ARGV) {
+			my ($f) =$_;
+			open($fp, "<".$f) || die "can not open [$f] [$!]";
+			@cururls = filter_url($fp);
+			close($fp);
+			foreach (@cururls) {
+				push(@urls,$_);
+			}
+		}
+	} else {
+		@urls = filter_url(\*STDIN);
+		Debug("urls [@urls]");
+	}
+
+	foreach (@urls) {
+		print $outfp $_."\n";
+	}
+
 } else {
 	Usage(3,"unknown subcmd [$subcmd]");
+}
+
+if ($outfp != \*STDOUT) {
+	close($outfp);
 }
